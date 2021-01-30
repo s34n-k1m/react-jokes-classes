@@ -22,6 +22,7 @@ function JokeList({ numJokesToGet = 5 }) {
     "lockedJokeIds",
     []
   );
+  const [isGenerating, setIsGenerating] = useState(false);
 
   console.log("jokes= ", jokes);
   console.log("isLoading= ", isLoading);
@@ -32,9 +33,8 @@ function JokeList({ numJokesToGet = 5 }) {
       async function getJokesWithApi() {
         try {
           // load jokes one at a time, adding not-yet-seen jokes
-          // const locked = new Set([lockedJokeIds]);
           let newJokes = jokes.filter((j) => lockedJokeIds.includes(j.id));
-          let seenJokes = new Set([...newJokes]);
+          let seenJokes = new Set(newJokes.map(joke => joke.id));
 
           while (newJokes.length < numJokesToGet) {
             let res = await axios.get("https://icanhazdadjoke.com", {
@@ -50,28 +50,29 @@ function JokeList({ numJokesToGet = 5 }) {
             }
           }
 
-          setJokes(newJokes);
+          setIsGenerating(false);
           setIsLoading(false);
+          setJokes(newJokes);
         } catch (err) {
           console.error(err);
         }
       }
 
-      // && JSON.stringify(jokes) === "[]"
-      if (isLoading) {
+      if ((isLoading && JSON.stringify(jokes) === "[]") || isGenerating) {
         getJokesWithApi();
       } else {
         setIsLoading(false);
       }
     },
-    [isLoading, numJokesToGet, setJokes, jokes, lockedJokeIds]
+    [isLoading, numJokesToGet, setJokes, jokes, lockedJokeIds, isGenerating]
   );
 
   /* empty joke list, set to loading state, and then call getJokes */
 
   function generateNewJokes() {
-    setJokes(jokes => (jokes.filter(j => lockedJokeIds.includes(j.id))));
     setIsLoading(true);
+    setIsGenerating(true);
+    // setJokes(jokes => (jokes.filter(j => lockedJokeIds.includes(j.id))));
   }
 
   /* change vote for this id by delta (+1 or -1) */
